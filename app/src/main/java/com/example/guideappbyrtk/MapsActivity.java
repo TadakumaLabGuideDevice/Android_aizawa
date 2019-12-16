@@ -139,7 +139,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     InputStream mmInStream = null;
     boolean connectFlg = false ;                  //盲導盤との接続状態
     String output = null;                         //盲導盤への指令　節電用に用いる
-
+    int USA = 0;
+    int counter = 0;
 
     //座標(緯度・経度)
     double currentLat = 37.900401;                 //現在の緯度　GPSによって取得
@@ -250,15 +251,15 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         for(BluetoothDevice device :devices){
             //string型の固定値の比較.equals(string)
             //ペアリング用　盲導盤の回路に搭載されてるbluetoothモジュール参照
-            String DEVICE_NAME = "SBDBT-001bdc057cd3";
-            //String DEVICE_NAME = "SBDBT-001bdc087049";
+            //String DEVICE_NAME = "SBDBT-001bdc057cd3";
+            String DEVICE_NAME = "SBDBT-001bdc087049";
             if(device.getName().equals(DEVICE_NAME)){
 
                 bluetoothState.setText(device.getName());
                 mDevice = device;
             }
         }
-            sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
+        sensorManager = (SensorManager) getSystemService(SENSOR_SERVICE);
     }
 
 
@@ -771,127 +772,127 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-        //VOICEボタンイベントここから------------------------------------------------------------------------
-        //音声入力の結果を受け取るために onActivityResult を設置
+    //VOICEボタンイベントここから------------------------------------------------------------------------
+    //音声入力の結果を受け取るために onActivityResult を設置
 
 
-        //STARTボタンイベントここから------------------------------------------------------------------------
-        //タイマー割り込みのイベント　スタートボタンを押した際に開始される
-        //ここら辺からアルゴリズムの改善
-        public class MainTimerTask extends TimerTask {
-            public void run() {
-                final String[] txt = new String[1];
-                timerHandler.post(new Runnable() {
-                    public void run() {
-                        float Deg = sensorChangeEvent.Deg;//results[0]…2点間の距離　　results[1]…2点間の角度
-                        if (path_val > hori) {                                                                  //ルート検索によって作成した経路を通り終えた際(最後の目的地までの誘導)
-                            Location.distanceBetween(currentLat, currentLng, targetLat, targetLng, results);
-                            target_deg = (int) results[1] - (int) Deg;                                          //(Googlemap2点間の角度)　-　(地磁気センサ)
+    //STARTボタンイベントここから------------------------------------------------------------------------
+    //タイマー割り込みのイベント　スタートボタンを押した際に開始される
+    //ここら辺からアルゴリズムの改善
+    public class MainTimerTask extends TimerTask {
+        public void run() {
+            final String[] txt = new String[1];
+            timerHandler.post(new Runnable() {
+                public void run() {
+                    float Deg = sensorChangeEvent.Deg;//results[0]…2点間の距離　　results[1]…2点間の角度
+                    if (path_val > hori) {                                                                  //ルート検索によって作成した経路を通り終えた際(最後の目的地までの誘導)
+                        Location.distanceBetween(currentLat, currentLng, targetLat, targetLng, results);
+                        target_deg = (int) results[1] - (int) Deg;                                          //(Googlemap2点間の角度)　-　(地磁気センサ)
 
-                            if (target_deg > 180) {
-                                target_deg = target_deg - 360;
-                            }
-                            else if(target_deg < -180) {
-                                target_deg = target_deg + 360;
-                            }
+                        if (target_deg > 180) {
+                            target_deg = target_deg - 360;
+                        }
+                        else if(target_deg < -180) {
+                            target_deg = target_deg + 360;
+                        }
 
-                            txt[0] = "目標点まで" + results[0] + "[m]  角度：" + target_deg;
-                            String nowDeg = "" + Deg;
-                            Mag.setText(nowDeg);
-                            statusTx.setText(txt[0]);
+                        txt[0] = "目標点まで" + results[0] + "[m]  角度：" + target_deg;
+                        String nowDeg = "" + Deg;
+                        Mag.setText(nowDeg);
+                        statusTx.setText(txt[0]);
 
-                            //現在位置と目標位置との距離が2[m]以下になったら誘導終了
-                            if (results[0] < 2.0) {
-                                Toast toast = Toast.makeText(getApplicationContext(), "FINISH!!", Toast.LENGTH_SHORT);
-                                toast.show();
+                        //現在位置と目標位置との距離が2[m]以下になったら誘導終了
+                        if (results[0] < 2.0) {
+                            Toast toast = Toast.makeText(getApplicationContext(), "FINISH!!", Toast.LENGTH_SHORT);
+                            toast.show();
 
-                                //盲導盤に停止の合図
-                                if (connectFlg) {
-                                    try {
-                                        mmOutputStream.write("7".getBytes());  //123456以外の数字送ると止まる
-                                    } catch (IOException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                //計測終了
-                                if (null != mainTimer) {
-                                    mainTimer.cancel();
-                                    mainTimer = null;
-                                    mainTimerTask = null;
+                            //盲導盤に停止の合図
+                            if (connectFlg) {
+                                try {
+                                    mmOutputStream.write("7".getBytes());  //123456以外の数字送ると止まる
+                                } catch (IOException e) {
+                                    e.printStackTrace();
                                 }
                             }
-                            else {
-                                if (connectFlg) outputToDevice(target_deg);
+                            //計測終了
+                            if (null != mainTimer) {
+                                mainTimer.cancel();
+                                mainTimer = null;
+                                mainTimerTask = null;
                             }
                         }
-
-                        else {  //ルート検索で作成した経路を通過中の際、ここら辺をいじる
-                            Location.distanceBetween(currentLat, currentLng, pathLat[path_val], pathLng[path_val], results);
-                            target_deg = (int) results[1] - (int) Deg;                                                          //(Googlemap2点間の角度)　-　(加速度・地磁気センサ)
-
-                            if (target_deg > 180) {
-                                target_deg = target_deg - 360;
-                            }
-
-                            else if (target_deg < -180) {
-                                target_deg = target_deg + 360;
-                            }
-
-                            txt[0] =    "目標点まで" + results[0] + "[m]  角度：" + target_deg;
-                            String nowDeg = "" + Deg;
-                            Mag.setText(nowDeg);
-                            statusTx.setText(txt[0]);
-
-                            //現在位置と目標マーカーとの距離が2[m]以下になったら目標を次のマーカーへ切り替える
-                            if (results[0] < 2.0) {
-                                path_val++;  //次のマーカーの更新
-                            }
-
-                            else {
-                                if (connectFlg) outputToDevice(target_deg);
-                            }
+                        else {
+                            if (connectFlg) outputToDevice(target_deg);
                         }
-
-                        //保存用
-                        array1[measure_val] = currentLat;
-                        array2[measure_val] = currentLng;
-                        measure_val++;
-
-                        //歩いた軌跡を描画
-                        ArrayList<LatLng> current_points;
-                        PolylineOptions current_lineOptions = null;
-
-                        for (int i = 0; i < 1; i++) {
-                            current_points = new ArrayList<>();
-                            current_lineOptions = new PolylineOptions();
-                            for (int drow_val = 0; drow_val < measure_val; drow_val++) {
-                                double drowLat = array1[drow_val];
-                                double drowLng = array2[drow_val];
-                                LatLng current_pos = new LatLng(drowLat, drowLng);
-                                current_points.add(current_pos);
-                            }
-                            current_lineOptions.addAll(current_points);
-                            current_lineOptions.width(10);
-                            current_lineOptions.color(Color.RED);
-                        }
-                        mMap.addPolyline(current_lineOptions);
                     }
 
-                });
-            }
+                    else {  //ルート検索で作成した経路を通過中の際、ここら辺をいじる
+                        Location.distanceBetween(currentLat, currentLng, pathLat[path_val], pathLng[path_val], results);
+                        target_deg = (int) results[1] - (int) Deg;                                                          //(Googlemap2点間の角度)　-　(加速度・地磁気センサ)
+
+                        if (target_deg > 180) {
+                            target_deg = target_deg - 360;
+                        }
+
+                        else if (target_deg < -180) {
+                            target_deg = target_deg + 360;
+                        }
+
+                        txt[0] =    "目標点まで" + results[0] + "[m]  角度：" + target_deg;
+                        String nowDeg = "" + Deg;
+                        Mag.setText(nowDeg);
+                        statusTx.setText(txt[0]);
+
+                        //現在位置と目標マーカーとの距離が2[m]以下になったら目標を次のマーカーへ切り替える
+                        if (results[0] < 2.0) {
+                            path_val++;  //次のマーカーの更新
+                        }
+
+                        else {
+                            if (connectFlg) outputToDevice(target_deg);
+                        }
+                    }
+
+                    //保存用
+                    array1[measure_val] = currentLat;
+                    array2[measure_val] = currentLng;
+                    measure_val++;
+
+                    //歩いた軌跡を描画
+                    ArrayList<LatLng> current_points;
+                    PolylineOptions current_lineOptions = null;
+
+                    for (int i = 0; i < 1; i++) {
+                        current_points = new ArrayList<>();
+                        current_lineOptions = new PolylineOptions();
+                        for (int drow_val = 0; drow_val < measure_val; drow_val++) {
+                            double drowLat = array1[drow_val];
+                            double drowLng = array2[drow_val];
+                            LatLng current_pos = new LatLng(drowLat, drowLng);
+                            current_points.add(current_pos);
+                        }
+                        current_lineOptions.addAll(current_points);
+                        current_lineOptions.width(10);
+                        current_lineOptions.color(Color.RED);
+                    }
+                    mMap.addPolyline(current_lineOptions);
+                }
+
+            });
         }
+    }
 
 
-        //盲導盤へ指令を送るイベント
-        public void outputToDevice(int deg) {
-            String direction = null;
+    //盲導盤へ指令を送るイベント
+    public void outputToDevice(int deg) {
+        String direction = null;
 
-            //角度によって呈示する方向を選択                   呈示する方向
-            if (deg < -45) direction = "1";  //左旋回
-            else if (-45 <= deg && deg < -10) direction = "2";  //左前
-            else if (-10 <= deg && deg <= 10) direction = "3";  //前　
-            else if (10 < deg && deg <= 45) direction = "4";  //右前
-            else if (45 < deg) direction = "5";  //右旋回
+        //角度によって呈示する方向を選択                   呈示する方向
+        if (deg < -45) direction = "1";  //左旋回
+        else if (-45 <= deg && deg < -10) direction = "2";  //左前
+        else if (-10 <= deg && deg <= 10) direction = "3";  //前　
+        else if (10 < deg && deg <= 45) direction = "4";  //右前
+        else if (45 < deg) direction = "5";  //右旋回
 /*
             //角度によって呈示する方向を選択                   呈示する方向　盲導盤第3試作機（会沢用）
             if (deg < -67.5) direction = "1";  //左旋回
@@ -900,8 +901,25 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             else if (22.5 < deg && deg <= 67.5) direction = "4";  //右前
             else if (67.5 < deg) direction = "5";  //右旋回
 */
-            //節電用　呈示する方向が切り替わった時のみ盲導盤へ指令送信
-            if (!direction.equals(output)) {
+        //節電用　呈示する方向が切り替わった時のみ盲導盤へ指令送信
+
+        USA = 0;
+        if(counter == 0){
+            output = direction;
+            try {
+                mmOutputStream.write(output.getBytes()); //arduino側はString v で受け取る
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            counter++;
+        }
+        if(counter == 1) {
+            try {
+                USA = mmInStream.read();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            if (USA == 1) {
                 output = direction;
                 try {
                     mmOutputStream.write(output.getBytes()); //arduino側はString v で受け取る
@@ -910,8 +928,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 }
             }
         }
+    }
 
-        //ヒュベニの公式
+    //ヒュベニの公式
    /*public static double deg2rad(double deg){
         return deg * Math.PI / 180.0;
     }
