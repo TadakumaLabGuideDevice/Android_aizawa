@@ -391,12 +391,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
     //マップタッチによる割り込み　ここから
     //タッチ1度目…目的地指定(デバッグ用)
-    //タッチ2回目…現在地指定(デバッグ用)
-    //タッチ3回目…目的地＆現在地リセット
+    //タッチ2回目…目的地リセット
 
     class MapClick implements GoogleMap.OnMapClickListener{
         public void onMapClick(LatLng point) {
-            if(currentFlg){                              //3回タッチすると目的地再設定 　currentFlgがtrueならこの処理
+            if(currentFlg){                              //2回タッチすると目的地再設定 　currentFlgがtrueならこの処理
                 markerPoints.clear();
                 mMap.clear();
                 targetFlg = false;
@@ -414,17 +413,21 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 options.position(point);
                 mMap.addMarker(options);
                 if(!targetFlg){ //目的地が未設定の場合
-                    targetLat = point.latitude;
+                    targetLat = point.latitude;          //目的地
                     targetLng = point.longitude;
+                    startLat = currentLat;               //現在地
+                    startLng = currentLng;
                     targetFlg = true;
+                    currentFlg = true;
+                    routeSearch();                         //ルート検索＆表示
                 }
-                else { //目的地が設定されている場合
+/*                else { //目的地が設定されている場合
                     startLat = point.latitude;
                     startLng = point.longitude;
                     markerPoints.add(point);
                     currentFlg = true;
                     routeSearch();                          //ルート検索＆表示
-                }
+                }*/
             }
         }
     }
@@ -607,7 +610,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         options = new MarkerOptions();
                         options.position(voice_point);
                         mMap.addMarker(options);
+                        startLat = currentLat;
+                        startLng = currentLng;
                         targetFlg = true;
+                        currentFlg = true;
+                        routeSearch();                         //ルート検索＆表示
                     }
                     //この下で緯度経度が取得できなかった時の処理入れるべし
 
