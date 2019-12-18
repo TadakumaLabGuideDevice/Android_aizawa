@@ -141,6 +141,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     String output = null;                         //盲導盤への指令　節電用に用いる
     int USA = 0;
     int counter = 0;
+    int startCount = 0;
 
     //座標(緯度・経度)
     double currentLat = 37.900401;                 //現在の緯度　GPSによって取得
@@ -672,6 +673,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         private void start() {
+            startCount = 1;
             mainTimer.cancel();
             mainTimer = null;
             mainTimerTask = null;
@@ -686,6 +688,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
         private void stop() {
+            startCount = 0;
             mainTimer = new Timer();
             mainTimer.cancel();
             mainTimer = null;
@@ -697,6 +700,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             }else{
                 currentLat = pathLat[path_val];
                 currentLng = pathLng[path_val];
+            }
+            output = "0";
+            try {
+                mmOutputStream.write(output.getBytes()); //arduino側はchar v で受け取る
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
 
@@ -886,24 +895,23 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     //盲導盤へ指令を送るイベント
     public void outputToDevice(int deg) {
         String direction = null;
-
+/*
         //角度によって呈示する方向を選択                   呈示する方向
         if (deg < -45) direction = "1";  //左旋回
         else if (-45 <= deg && deg < -10) direction = "2";  //左前
         else if (-10 <= deg && deg <= 10) direction = "3";  //前　
         else if (10 < deg && deg <= 45) direction = "4";  //右前
         else if (45 < deg) direction = "5";  //右旋回
-/*
+*/
             //角度によって呈示する方向を選択                   呈示する方向　盲導盤第3試作機（会沢用）
             if (deg < -67.5) direction = "1";  //左旋回
             else if (-67.5 <= deg && deg < -22.5) direction = "2";  //左前
             else if (-22.5 <= deg && deg <= 22.5) direction = "3";  //前　
             else if (22.5 < deg && deg <= 67.5) direction = "4";  //右前
             else if (67.5 < deg) direction = "5";  //右旋回
-*/
-        //節電用　呈示する方向が切り替わった時のみ盲導盤へ指令送信
 
-        USA = 0;
+/*
+        USA = 0;                          //arduino側で1動作を確認して指令
         if(counter == 0){
             output = direction;
             try {
@@ -926,6 +934,28 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
+            }
+        }*/
+
+/*
+        if(USA == 3*counter){　　　　　　　　　　　　　　　　　　　　　//何カウントに１回指令
+            output = direction;
+            try {
+                mmOutputStream.write(output.getBytes()); //arduino側はString v で受け取る
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            counter++;
+        }
+        USA++;*/
+
+        //節電用　呈示する方向が切り替わった時のみ盲導盤へ指令送信
+        if (!direction.equals(output) && startCount == 1) {
+            output = direction;
+            try {
+                mmOutputStream.write(output.getBytes()); //arduino側はchar v で受け取る
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
     }
@@ -980,6 +1010,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mSocket.close();
         }
         catch(Exception ignored){}
+
     }
 }
 
