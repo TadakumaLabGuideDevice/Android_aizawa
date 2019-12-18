@@ -396,6 +396,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     class MapClick implements GoogleMap.OnMapClickListener{
         public void onMapClick(LatLng point) {
             if(currentFlg){                              //2回タッチすると目的地再設定 　currentFlgがtrueならこの処理
+                startCount = 0;
+                output = "0";     //盲導盤停止
+                try {
+                    mmOutputStream.write(output.getBytes()); //arduino側はchar v で受け取る
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 markerPoints.clear();
                 mMap.clear();
                 targetFlg = false;
