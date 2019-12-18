@@ -40,6 +40,8 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.UiSettings;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import org.json.JSONObject;
@@ -809,9 +811,9 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             timerHandler.post(new Runnable() {
                 public void run() {
                     float Deg = sensorChangeEvent.Deg;//results[0]…2点間の距離　　results[1]…2点間の角度
-                    if (path_val > hori) {                                                                  //ルート検索によって作成した経路を通り終えた際(最後の目的地までの誘導)
+                    if (path_val > hori) {                     //ルート検索によって作成した経路を通り終えた際(最後の目的地までの誘導)
                         Location.distanceBetween(currentLat, currentLng, targetLat, targetLng, results);
-                        target_deg = (int) results[1] - (int) Deg;                                          //(Googlemap2点間の角度)　-　(地磁気センサ)
+                        target_deg = (int) results[1] - (int) Deg;       //(Googlemap2点間の角度)　-　(地磁気センサ)
 
                         if (target_deg > 180) {
                             target_deg = target_deg - 360;
@@ -829,11 +831,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                         if (results[0] < 2.0) {
                             Toast toast = Toast.makeText(getApplicationContext(), "FINISH!!", Toast.LENGTH_SHORT);
                             toast.show();
-
                             //盲導盤に停止の合図
                             if (connectFlg) {
                                 try {
-                                    mmOutputStream.write("7".getBytes());  //123456以外の数字送ると止まる
+                                    mmOutputStream.write("0".getBytes());  //123456以外の数字送ると止まる
                                 } catch (IOException e) {
                                     e.printStackTrace();
                                 }
@@ -869,6 +870,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
                         //現在位置と目標マーカーとの距離が2[m]以下になったら目標を次のマーカーへ切り替える
                         if (results[0] < 2.0) {
+                            LatLng position = new LatLng(pathLat[path_val], pathLng[path_val]);
+                            options.position(position);
+                            BitmapDescriptor icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN);
+                            options.icon(icon);
+                            mMap.addMarker(options);
                             path_val++;  //次のマーカーの更新
                         }
 
