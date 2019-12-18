@@ -674,6 +674,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         private void start() {
             startCount = 1;
+            mainTimer = new Timer();
             mainTimer.cancel();
             mainTimer = null;
             mainTimerTask = null;
@@ -701,7 +702,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
                 currentLat = pathLat[path_val];
                 currentLng = pathLng[path_val];
             }
-            output = "0";
+            output = "0";     //盲導盤停止
             try {
                 mmOutputStream.write(output.getBytes()); //arduino側はchar v で受け取る
             } catch (IOException e) {
