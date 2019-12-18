@@ -711,13 +711,13 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
             mainTimer = null;
             mainTimerTask = null;
 
-            if(path_val > hori){
+ /*           if(path_val > hori){
                 currentLat = targetLat;
                 currentLng = targetLng;
             }else{
                 currentLat = pathLat[path_val];
                 currentLng = pathLng[path_val];
-            }
+            }*/
             output = "0";     //盲導盤停止
             try {
                 mmOutputStream.write(output.getBytes()); //arduino側はchar v で受け取る
